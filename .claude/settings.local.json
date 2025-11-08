@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(conda create:*)",
+      "Bash(/c/Users/thescoop/anaconda3/envs/rateConvert/python.exe -c \"import sys; sys.path.insert(0, ''.''); from rateConvert import discover_rates_file, load_rates_table; rates_file = discover_rates_file(); rates_data = load_rates_table(rates_file); print(f''Case types: {len(rates_data[\"\"case_types\"\"])}''); print(f''Activities: {list(rates_data[\"\"rates\"\"].keys())}'')\")",
+      "Bash(cmd /c:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
