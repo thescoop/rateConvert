@@ -328,11 +328,16 @@ class RateConverterGUI:
         help_btn = ttk.Button(header_frame, text="Help", command=self.show_help, width=8)
         help_btn.pack(side='right', padx=5)
         
-        # Single toggle button for Input/Output
+        # View buttons
         self.view_toggle_btn = ttk.Button(header_frame, text="View: Input ▼", 
                                          command=self.toggle_input_output, width=15)
-        self.view_toggle_btn.pack(side='right', padx=5)
+        self.view_toggle_btn.pack(side='right', padx=2)
         self.view_toggle_btn.config(state='disabled')  # Disabled until conversion runs
+        
+        self.review_btn = ttk.Button(header_frame, text="For Review", 
+                                     command=self.show_review_view, width=12)
+        self.review_btn.pack(side='right', padx=2)
+        self.review_btn.config(state='disabled')  # Disabled until conversion runs
         
         # Use PanedWindow to split table (2/3) and stats (1/3) vertically
         content_pane = tk.PanedWindow(parent, orient=tk.VERTICAL, sashwidth=3, 
@@ -461,7 +466,8 @@ class RateConverterGUI:
     def show_review_view(self):
         self.preview_mode = 'review'
         self.preview_title_label.config(text="Preview: For Review", foreground='orange')
-        self.view_toggle_btn.config(state='disabled')
+        # Reset toggle button to Input
+        self.view_toggle_btn.config(text="View: Input ▼")
         self.display_review_rows()
     
     def toggle_input_output(self):
@@ -982,8 +988,9 @@ TIPS
             # Show review view by default
             self.show_review_view()
             
-            # Enable the Input/Output toggle button
+            # Enable the view buttons
             self.view_toggle_btn.config(state='normal')
+            self.review_btn.config(state='normal')
             
             if conversion_result['unmatched_count'] > 0:
                 self.log_status("\n⚠ Review unmatched rows before saving", 'warning')
