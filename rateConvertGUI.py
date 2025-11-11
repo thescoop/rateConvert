@@ -5,6 +5,12 @@ try:
     HAS_DND = True
 except ImportError:
     HAS_DND = False
+try:
+    import ttkbootstrap as tb
+    from ttkbootstrap.constants import *
+    HAS_TTKB = True
+except ImportError:
+    HAS_TTKB = False
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 import os
@@ -40,14 +46,18 @@ class RateConverterGUI:
     
     def apply_light_theme(self):
         self.current_theme = 'light'
-        self.style.theme_use('clam')
         
-        # Main background - soft grey
-        self.root.configure(bg='#E8EBF0')
-        
-        # Configure frame styles with depth
-        self.style.configure('TFrame', background='#E8EBF0')
-        self.style.configure('Card.TFrame', background='#FFFFFF', relief='flat', borderwidth=0)
+        if HAS_TTKB:
+            self.style = tb.Style(theme='flatly')
+            self.root.configure(bg='#ECF0F1')
+            # ttkbootstrap handles most styling automatically
+        else:
+            self.style.theme_use('clam')
+            self.root.configure(bg='#E8EBF0')
+            
+            # Fallback: Configure frame styles with depth
+            self.style.configure('TFrame', background='#E8EBF0')
+            self.style.configure('Card.TFrame', background='#FFFFFF', relief='flat', borderwidth=0)
         
         # Configure LabelFrame (section headers) - Clean white cards
         self.style.configure('TLabelframe', background='#FFFFFF', borderwidth=0, relief='flat')
@@ -116,10 +126,13 @@ class RateConverterGUI:
     
     def apply_dark_theme(self):
         self.current_theme = 'dark'
-        self.style.theme_use('clam')
         
-        # Main background - Softer dark blue
-        self.root.configure(bg='#1E2939')
+        if HAS_TTKB:
+            self.style = tb.Style(theme='darkly')
+            self.root.configure(bg='#222222')
+        else:
+            self.style.theme_use('clam')
+            self.root.configure(bg='#1E2939')
         
         # Configure frame styles with depth
         self.style.configure('TFrame', background='#1E2939')
@@ -212,6 +225,11 @@ class RateConverterGUI:
         
         self.setup_left_panel(left_frame)
         self.setup_right_panel(right_frame)
+        
+        # Bottom status bar
+        self.status_bar = ttk.Label(self.root, text="Ready", relief=tk.SUNKEN, anchor=tk.W,
+                                   font=('Segoe UI', 8))
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=2, pady=2)
     
     def setup_left_panel(self, parent):
         parent.configure(style='TFrame')
@@ -242,14 +260,20 @@ class RateConverterGUI:
         input_frame = ttk.LabelFrame(parent, text="Excel File to Convert", padding="6")
         input_frame.pack(fill='x', padx=10, pady=6)
         
-        # Drop zone frame
-        self.drop_zone = tk.Frame(input_frame, height=60, relief='flat', 
-                                 bd=2, cursor='hand2')
+        # Drop zone frame - card-like with rounded feel
+        self.drop_zone = tk.Frame(input_frame, height=60, relief='solid', 
+                                 bd=1, cursor='hand2', highlightthickness=1,
+                                 highlightbackground='#D0D0D0')
         self.drop_zone.pack(fill='both', expand=True)
         self.drop_zone.pack_propagate(False)
         
-        # Icon and text
-        self.drop_icon_label = ttk.Label(self.drop_zone, text="📊", font=('Segoe UI', 16))
+        # Icon and text - use inbox icon for initial state
+        try:
+            icon_text = "📥"  # Inbox tray icon
+        except:
+            icon_text = "[+]"  # Fallback if emoji not supported
+        
+        self.drop_icon_label = ttk.Label(self.drop_zone, text=icon_text, font=('Segoe UI', 16))
         self.drop_icon_label.pack(pady=(5, 0))
         
         self.drop_text_label = ttk.Label(self.drop_zone, text="Drop 'Time and Fees.xlsx' here",
@@ -260,8 +284,18 @@ class RateConverterGUI:
                                         font=('Segoe UI', 7), foreground="gray")
         self.drop_hint_label.pack()
         
-        # Bind click event
+        # Bind click and hover events
+        def on_drop_hover_enter(e):
+            hover_bg = '#EEF3F9' if self.current_theme == 'light' else '#455C74'
+            self.drop_zone.config(bg=hover_bg)
+            
+        def on_drop_hover_leave(e):
+            normal_bg = '#F5F5F5' if self.current_theme == 'light' else '#2A3F54'
+            self.drop_zone.config(bg=normal_bg)
+        
         self.drop_zone.bind('<Button-1>', lambda e: self.browse_input_file())
+        self.drop_zone.bind('<Enter>', on_drop_hover_enter)
+        self.drop_zone.bind('<Leave>', on_drop_hover_leave)
         self.drop_icon_label.bind('<Button-1>', lambda e: self.browse_input_file())
         self.drop_text_label.bind('<Button-1>', lambda e: self.browse_input_file())
         self.drop_hint_label.bind('<Button-1>', lambda e: self.browse_input_file())
@@ -278,22 +312,38 @@ class RateConverterGUI:
         case_frame.pack(fill='x', padx=10, pady=6)
         
         self.case_type_var = tk.StringVar()
-        self.case_type_combo = ttk.Combobox(case_frame, textvariable=self.case_type_var, 
-                                           state='readonly', width=35)
+        if HAS_TTKB:
+            self.case_type_combo = ttk.Combobox(case_frame, textvariable=self.case_type_var, 
+                                               state='readonly', width=35, bootstyle='info')
+        else:
+            self.case_type_combo = ttk.Combobox(case_frame, textvariable=self.case_type_var, 
+                                               state='readonly', width=35)
         self.case_type_combo.pack(fill='x')
         
         # 4. Action Buttons
         buttons_frame = ttk.Frame(parent)
         buttons_frame.pack(fill='x', padx=10, pady=8)
         
-        self.convert_btn = ttk.Button(buttons_frame, text="Convert Rates", 
-                                     command=self.convert_rates, state='disabled',
-                                     style='Convert.TButton')
+        # Convert button with bootstyle when available
+        if HAS_TTKB:
+            self.convert_btn = ttk.Button(buttons_frame, text="Convert Rates", 
+                                         command=self.convert_rates, state='disabled',
+                                         bootstyle='primary')
+        else:
+            self.convert_btn = ttk.Button(buttons_frame, text="Convert Rates", 
+                                         command=self.convert_rates, state='disabled',
+                                         style='Convert.TButton')
         self.convert_btn.pack(side='left', padx=5, expand=True, fill='x')
         
-        self.save_btn = ttk.Button(buttons_frame, text="Save Output", 
-                                  command=self.save_output, state='disabled',
-                                  style='Save.TButton')
+        # Save button with bootstyle when available
+        if HAS_TTKB:
+            self.save_btn = ttk.Button(buttons_frame, text="Save Output", 
+                                      command=self.save_output, state='disabled',
+                                      bootstyle='success')
+        else:
+            self.save_btn = ttk.Button(buttons_frame, text="Save Output", 
+                                      command=self.save_output, state='disabled',
+                                      style='Save.TButton')
         self.save_btn.pack(side='left', padx=5, expand=True, fill='x')
         
         # 5. Status Log
@@ -328,14 +378,24 @@ class RateConverterGUI:
         help_btn = ttk.Button(header_frame, text="Help", command=self.show_help, width=8)
         help_btn.pack(side='right', padx=5)
         
-        # View buttons
-        self.view_toggle_btn = ttk.Button(header_frame, text="View: Input ▼", 
-                                         command=self.toggle_input_output, width=15)
+        # View buttons with bootstyles
+        if HAS_TTKB:
+            self.view_toggle_btn = ttk.Button(header_frame, text="View: Input ▼", 
+                                             command=self.toggle_input_output, width=15,
+                                             bootstyle='secondary-outline')
+        else:
+            self.view_toggle_btn = ttk.Button(header_frame, text="View: Input ▼", 
+                                             command=self.toggle_input_output, width=15)
         self.view_toggle_btn.pack(side='right', padx=2)
         self.view_toggle_btn.config(state='disabled')  # Disabled until conversion runs
         
-        self.review_btn = ttk.Button(header_frame, text="For Review", 
-                                     command=self.show_review_view, width=12)
+        if HAS_TTKB:
+            self.review_btn = ttk.Button(header_frame, text="For Review", 
+                                         command=self.show_review_view, width=12,
+                                         bootstyle='warning-outline')
+        else:
+            self.review_btn = ttk.Button(header_frame, text="For Review", 
+                                         command=self.show_review_view, width=12)
         self.review_btn.pack(side='right', padx=2)
         self.review_btn.config(state='disabled')  # Disabled until conversion runs
         
@@ -370,9 +430,14 @@ class RateConverterGUI:
             self.preview_tree.heading(col, text=col)
             self.preview_tree.column(col, width=column_widths_chars.get(col, 100), anchor='w')
         
+        # Configure tags including striped rows
         self.preview_tree.tag_configure('missing_data', background='#FFFF99')
         self.preview_tree.tag_configure('unmatched', background='#FFD699')
         self.preview_tree.tag_configure('success_message', background='#D4EDDA', font=('Arial', 10, 'bold'))
+        
+        # Striped rows for better readability
+        stripe_light = '#ECF4FF' if self.current_theme == 'light' else '#314A63'
+        self.preview_tree.tag_configure('evenrow', background=stripe_light)
         
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.preview_tree.yview)
         hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.preview_tree.xview)
@@ -432,6 +497,12 @@ class RateConverterGUI:
         self.status_text.insert(tk.END, message + '\n', tag)
         self.status_text.see(tk.END)
         self.status_text.config(state='disabled')
+        
+        # Update status bar with short version of message (first line, truncated)
+        if hasattr(self, 'status_bar'):
+            short_msg = message.split('\n')[0][:80]  # First line, max 80 chars
+            self.status_bar.config(text=short_msg)
+        
         self.root.update()
     
     def update_preview(self, rows, issue_type):
@@ -491,7 +562,7 @@ class RateConverterGUI:
         if not self.input_rows:
             return
         
-        for row in self.input_rows:
+        for idx, row in enumerate(self.input_rows):
             date_str = row['date'].strftime('%d/%m/%Y') if isinstance(row['date'], datetime) else str(row['date']) if row.get('date') else ''
             values = (
                 row.get('row_num', ''),
@@ -504,7 +575,9 @@ class RateConverterGUI:
                 row.get('amount', ''),
                 ''
             )
-            self.preview_tree.insert('', 'end', values=values)
+            # Apply striped rows
+            tags = ('evenrow',) if idx % 2 == 0 else ()
+            self.preview_tree.insert('', 'end', values=values, tags=tags)
     
     def display_output_rows(self):
         for item in self.preview_tree.get_children():
@@ -513,7 +586,7 @@ class RateConverterGUI:
         if not self.output_rows:
             return
         
-        for row in self.output_rows:
+        for idx, row in enumerate(self.output_rows):
             date_str = row['date'].strftime('%d/%m/%Y') if isinstance(row['date'], datetime) else str(row['date']) if row.get('date') else ''
             tag = 'unmatched' if not row.get('matched', True) else ''
             values = (
@@ -527,7 +600,11 @@ class RateConverterGUI:
                 row.get('new_amount', row.get('amount', '')),
                 'Unmatched' if tag else ''
             )
-            self.preview_tree.insert('', 'end', values=values, tags=(tag,) if tag else ())
+            # Combine striping with existing tags
+            tags = [tag] if tag else []
+            if idx % 2 == 0:
+                tags.append('evenrow')
+            self.preview_tree.insert('', 'end', values=values, tags=tuple(tags) if tags else ())
     
     def display_review_rows(self):
         for item in self.preview_tree.get_children():
@@ -539,7 +616,7 @@ class RateConverterGUI:
                                     tags=('success_message',))
             return
         
-        for row in self.rows_for_review:
+        for idx, row in enumerate(self.rows_for_review):
             date_str = row['date'].strftime('%d/%m/%Y') if isinstance(row['date'], datetime) else str(row['date']) if row.get('date') else ''
             tag = 'unmatched' if not row.get('matched', True) else ''
             values = (
@@ -553,7 +630,11 @@ class RateConverterGUI:
                 row.get('new_amount', row.get('amount', '')),
                 row.get('issue', '')
             )
-            self.preview_tree.insert('', 'end', values=values, tags=('unmatched',))
+            # Combine striping with unmatched tag
+            tags = ['unmatched']
+            if idx % 2 == 0:
+                tags.append('evenrow')
+            self.preview_tree.insert('', 'end', values=values, tags=tuple(tags))
     
     def update_totals(self, original_total, converted_total):
         difference = converted_total - original_total
@@ -828,8 +909,12 @@ TIPS
         self.input_file = file_path
         filename = os.path.basename(file_path)
         
-        # Update drop zone to show selected file
-        self.drop_icon_label.config(text="✓")
+        # Update drop zone to show selected file - change icon to document
+        try:
+            doc_icon = "📄"  # Document icon
+        except:
+            doc_icon = "✓"  # Fallback
+        self.drop_icon_label.config(text=doc_icon)
         self.drop_text_label.config(text=filename)
         self.drop_hint_label.config(text="Click to change file")
         self.reset_drop_zone_style()
