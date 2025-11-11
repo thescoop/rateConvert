@@ -1,0 +1,23 @@
+# Legal Aid Rate Converter - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# === REQUIRED DEPENDENCIES ===
+# Core functionality - application will NOT work without these
+openpyxl>=3.1.0
+
+# === OPTIONAL DEPENDENCIES ===
+# Modern UI enhancements - application falls back gracefully if missing
+
+# Modern bootstrap themes (flatly/darkly)
+# Fallback: Uses standard ttk themes
+ttkbootstrap>=1.10.0
+
+# Drag-and-drop file support
+# Fallback: Click-to-browse only
+tkinterdnd2>=0.3.0
+
+# === NOTES ===
+# - Python 3.8+ required (developed with Python 3.13)
+# - All dependencies are pip-installable
+# - Optional dependencies enhance UX but are not required
+# - GDPR-compliant: No data collection, all processing local

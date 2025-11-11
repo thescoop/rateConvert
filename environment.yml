@@ -1,0 +1,41 @@
+# Legal Aid Rate Converter - Conda Environment
+# Create environment with: conda env create -f environment.yml
+# Activate with: conda activate rateConvert
+
+name: rateConvert
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  
+  # Required dependencies
+  - openpyxl>=3.1.0
+  
+  # Optional dependencies (installed via pip for latest versions)
+  - pip
+  - pip:
+    # Modern UI themes (optional - graceful fallback)
+    - ttkbootstrap>=1.10.0
+    
+    # Drag-and-drop support (optional - click-to-browse fallback)
+    - tkinterdnd2>=0.3.0
+
+# === ENVIRONMENT NOTES ===
+# Required:
+#   - openpyxl: Excel file reading/writing with VBA preservation
+#
+# Optional (app works without these):
+#   - ttkbootstrap: Modern flatly/darkly bootstrap themes
+#                   Fallback: Standard ttk 'clam' theme
+#   - tkinterdnd2: Drag-and-drop file upload
+#                  Fallback: Click-to-browse file dialog
+#
+# Privacy & Compliance:
+#   - All processing is local (GDPR-compliant)
+#   - No external data transmission
+#   - No telemetry or analytics
+#
+# Platform Support:
+#   - Windows (primary target)
+#   - macOS/Linux (tkinter must be available)
