@@ -1230,7 +1230,7 @@ TIPS
                         best_diff = diff
                         best_match = activity_key
         
-        if best_diff < 1.00:
+        if best_diff < 0.50:
             return best_match, best_diff
         else:
             return None, None
