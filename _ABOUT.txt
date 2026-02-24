@@ -1,0 +1,8 @@
+LEGAL AID RATE CONVERTER
+=========================
+A polished desktop GUI that converts time-and-fee entries in Excel
+spreadsheets when a Legal Aid case changes classification (e.g. Care &
+Supervision to Private Law). Loads your rates file automatically, shows
+a before/after preview, and saves a converted copy.
+
+Run _rateConvertGUI.bat to launch.
